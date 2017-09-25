@@ -1,2 +1,2 @@
-from .tradebot import *
+from .tradebot import TradeBot
 
