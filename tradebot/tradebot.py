@@ -1,4 +1,8 @@
+import logging
 from bittrex import Bittrex
+
+
+logging.basicConfig(level=logging.INFO)
 
 
 def calculate_change(x, y):
@@ -11,9 +15,9 @@ class TradeBot():
     def __init__(self, key=None, secret=None, base_currency=base_currency):
         self.exchange = Bittrex(key, secret)
         self.base_currency = base_currency
-        self.update()
 
     def get_markets(self):
+        logging.info(f'Getting markets for {self.base_currency}')
         all_markets = self.exchange.get_markets()['result']
         markets = set()
         for mkt in all_markets:
@@ -25,12 +29,14 @@ class TradeBot():
     def get_market_data(self):
         mkt_data = []
         for mkt in self.get_markets():
+            logging.info(f'Getting market data for {mkt}')
             data = self.exchange.get_marketsummary(mkt)['result'][0]
             data['Change'] = calculate_change(data['Last'], data['PrevDay'])
             mkt_data.append(data)
         return mkt_data
 
     def update(self):
+        logging.info('Updating data')
         self.markets = self.get_markets()
         self.market_data = self.get_market_data()
 
