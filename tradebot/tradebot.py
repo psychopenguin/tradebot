@@ -1,6 +1,4 @@
 import logging
-from threading import Thread
-from time import sleep
 from bittrex import Bittrex
 
 
@@ -11,11 +9,10 @@ def calculate_change(x, y):
     return ((x/y) * 100) - 100
 
 
-class TradeBot(Thread):
+class TradeBot():
     base_currency = 'ETH'
 
     def __init__(self, key=None, secret=None, base_currency=base_currency):
-        Thread.__init__(self)
         self.exchange = Bittrex(key, secret)
         self.base_currency = base_currency
 
@@ -32,7 +29,7 @@ class TradeBot(Thread):
     def get_market_data(self):
         mkt_data = []
         for mkt in self.get_markets():
-            logging.debug(f'Getting market data for {mkt}')
+            logging.info(f'Getting market data for {mkt}')
             data = self.exchange.get_marketsummary(mkt)['result'][0]
             data['Change'] = calculate_change(data['Last'], data['PrevDay'])
             mkt_data.append(data)
@@ -45,12 +42,6 @@ class TradeBot(Thread):
 
     def get_big_drop(self):
         return sorted(self.market_data, key=lambda x: x['Change'])[0]
-
+    
     def get_big_spike(self):
         return sorted(self.market_data, key=lambda x: x['Change'])[-1]
-
-    def run(self):
-        while True:
-            self.update()
-            logging.info('sleeping...')
-            sleep(60)
