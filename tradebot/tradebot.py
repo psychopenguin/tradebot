@@ -22,6 +22,7 @@ class TradeBot():
         config = {
                 'base_currency': 'ETH',
                 'min_order': 0.001,
+                'max_order': 0.05,
                 'sleep_time': 60,
                 'profit': 2
                 }
@@ -52,7 +53,9 @@ class TradeBot():
     def has_balance_to_buy(self):
         logging.info('checking if we have some balance to buy')
         q = self.exchange.get_balance(self.base_currency)
-        self.balance = q['result']['Available']
+        # balance_adjustment to avoid INSUFFICIENT FUNDS MESSAGE
+        balance_adjustment = 0.00005
+        self.balance = q['result']['Available'] - balance_adjustment
         logging.debug(f'{self.balance}{self.base_currency} available')
         if self.balance >= self.min_order:
             return True
@@ -65,10 +68,30 @@ class TradeBot():
         return sorted_mkt[0]
 
     def buy(self, mkt):
-        price = mkt['Last']
-        qnt = self.balance/price
-        order = self.exchange.buy_limit(mkt['MarketName'], qnt, price)
+        coin = mkt['MarketName']
+        price = mkt['Ask']
+        if self.balance > self.max_order:
+            qnt = self.max_order/price
+        else:
+            qnt = self.balance/price
+        logging.info(f'BUY {qnt} {coin} - price {price}, total {price * qnt}')
+        order = self.exchange.buy_limit(coin, qnt, price)
+        if order['success']:
+            self.orders.append(order['result']['uuid'])
+        else:
+            logging.error(f'BUY FAIL - {order}')
         return(order)
+
+    def sell(self):
+        for order in self.orders:
+            order_info = self.exchange.get_order(order)['result']
+            if order_info['Closed']:
+                coin = order_info['Exchange']
+                qnt = order_info['Quantity']
+                price = profit(order_info['PricePerUnit'], self.profit)
+                sell_order = self.exchange.sell_limit(coin, qnt, price)
+                self.orders.remove(order)
+                logging.info(f'SELL {order} {sell_order}')
 
     def update(self):
         logging.info('Updating data')
@@ -76,10 +99,10 @@ class TradeBot():
         self.market_data = self.get_market_data()
 
     def do_trade(self):
-        # TODO: buy something
         if self.has_balance_to_buy():
             self.buy(self.get_market_to_buy())
-        # TODO: sell stuff
+        if len(self.orders) > 0:
+            self.sell()
         logging.info(f'Sleeping for {self.sleep_time} seconds')
         sleep(self.sleep_time)
 
