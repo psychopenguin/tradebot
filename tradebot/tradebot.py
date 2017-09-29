@@ -65,7 +65,7 @@ class TradeBot():
         logging.info('checking if we have some balance to buy')
         q = self.exchange.get_balance(self.base_currency)
         # balance_adjustment to avoid INSUFFICIENT FUNDS MESSAGE
-        balance_adjustment = 0.00001
+        balance_adjustment = 0.00005
         self.balance = q['result']['Available'] - balance_adjustment
         logging.debug(f'{self.balance}{self.base_currency} available')
         if self.balance >= self.min_order:
