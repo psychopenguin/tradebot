@@ -7,7 +7,11 @@ logging.basicConfig(level=logging.INFO)
 
 
 def calculate_change(x, y):
-    return ((x/y) * 100) - 100
+    try:
+        change = ((x/y) * 100) - 100
+    except ZeroDivisionError:
+        change = 0
+    return change
 
 
 def profit(x, y):
@@ -41,6 +45,13 @@ class TradeBot():
                 markets.add(mkt['MarketName'])
         return markets
 
+    def get_coins_with_open_orders(self):
+        open_orders = self.exchange.get_open_orders()['result']
+        if len(open_orders) == 0:
+            return []
+        else:
+            return [x['Exchange'] for x in open_orders]
+
     def get_market_data(self):
         mkt_data = []
         for mkt in self.markets:
@@ -54,7 +65,7 @@ class TradeBot():
         logging.info('checking if we have some balance to buy')
         q = self.exchange.get_balance(self.base_currency)
         # balance_adjustment to avoid INSUFFICIENT FUNDS MESSAGE
-        balance_adjustment = 0.00005
+        balance_adjustment = 0.00001
         self.balance = q['result']['Available'] - balance_adjustment
         logging.debug(f'{self.balance}{self.base_currency} available')
         if self.balance >= self.min_order:
@@ -65,6 +76,8 @@ class TradeBot():
     def get_market_to_buy(self):
         self.update()
         sorted_mkt = sorted(self.market_data, key=lambda x: x['Change'])
+        while sorted_mkt[0]['MarketName'] in self.coins_with_open_orders:
+            sorted_mkt.pop(0)
         return sorted_mkt[0]
 
     def buy(self, mkt):
@@ -97,6 +110,7 @@ class TradeBot():
         logging.info('Updating data')
         self.markets = self.get_markets()
         self.market_data = self.get_market_data()
+        self.coins_with_open_orders = self.get_coins_with_open_orders()
 
     def do_trade(self):
         if self.has_balance_to_buy():
