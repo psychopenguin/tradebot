@@ -28,7 +28,9 @@ class TradeBot():
                 'min_order': 0.001,
                 'max_order': 0.05,
                 'sleep_time': 60,
-                'profit': 2
+                'profit': 2,
+                'min_volume': 75,
+                'max_units': 100
                 }
         # Update config from object constructor
         config.update(kwargs)
@@ -75,7 +77,9 @@ class TradeBot():
 
     def get_market_to_buy(self):
         self.update()
-        sorted_mkt = sorted(self.market_data, key=lambda x: x['Change'])
+        mkt = [m for m in self.market_data if m[
+            'BaseVolume'] >= self.min_volume]
+        sorted_mkt = sorted(mkt, key=lambda x: x['Change'])
         while sorted_mkt[0]['MarketName'] in self.coins_with_open_orders:
             sorted_mkt.pop(0)
         return sorted_mkt[0]
@@ -87,6 +91,8 @@ class TradeBot():
             qnt = self.max_order/price
         else:
             qnt = self.balance/price
+        if qnt > self.max_units:
+            qnt = self.max_units
         logging.info(f'BUY {qnt} {coin} - price {price}, total {price * qnt}')
         order = self.exchange.buy_limit(coin, qnt, price)
         if order['success']:
