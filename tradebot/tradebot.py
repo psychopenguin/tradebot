@@ -93,6 +93,8 @@ class TradeBot():
             qnt = self.balance/price
         if qnt > self.max_units:
             qnt = self.max_units
+        if (qnt * price) < self.min_order:
+            qnt = self.min_order/price
         logging.info(f'BUY {qnt} {coin} - price {price}, total {price * qnt}')
         order = self.exchange.buy_limit(coin, qnt, price)
         if order['success']:
