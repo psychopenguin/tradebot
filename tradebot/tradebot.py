@@ -59,7 +59,7 @@ class TradeBot():
         for mkt in self.markets:
             logging.info(f'Getting market data for {mkt}')
             data = self.exchange.get_marketsummary(mkt)['result'][0]
-            data['Change'] = calculate_change(data['Last'], data['PrevDay'])
+            data['Change'] = calculate_change(data['Last'], data['Low'])
             mkt_data.append(data)
         return mkt_data
 
@@ -86,7 +86,7 @@ class TradeBot():
 
     def buy(self, mkt):
         coin = mkt['MarketName']
-        price = mkt['Ask']
+        price = mkt['Bid']
         if self.balance > self.max_order:
             qnt = self.max_order/price
         else:
