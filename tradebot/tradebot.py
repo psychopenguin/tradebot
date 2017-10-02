@@ -79,14 +79,15 @@ class TradeBot():
         self.update()
         mkt = [m for m in self.market_data if m[
             'BaseVolume'] >= self.min_volume]
-        sorted_mkt = sorted(mkt, key=lambda x: x['Change'])
+        sorted_mkt = sorted(mkt, key=lambda x: x['BaseVolume'], reverse=True)
         while sorted_mkt[0]['MarketName'] in self.coins_with_open_orders:
             sorted_mkt.pop(0)
         return sorted_mkt[0]
 
     def buy(self, mkt):
         coin = mkt['MarketName']
-        price = mkt['Ask']
+        # get a price between ask and bid
+        price = (mkt['Ask'] + mkt['Bid'])/2
         if self.balance > self.max_order:
             qnt = self.max_order/price
         else:
