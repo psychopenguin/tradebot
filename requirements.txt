@@ -1,2 +1,2 @@
 python-bittrex==0.1.4
-PyYAML==3.12
+PyYAML==5.4
